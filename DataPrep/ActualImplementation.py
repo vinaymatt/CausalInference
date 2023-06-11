@@ -246,12 +246,12 @@ with open(os.path.join(results_folder_name, 'ate_and_error_values5.txt'), 'w') a
     for ate, error in ate_and_error_list:
         f.write(f'{ate} {error}\n')
 
-# Save PEHE values to a txt file
+
 with open(os.path.join(results_folder_name, 'pehe_values1.txt'), 'w') as f:
     for pehe in pehe_values:
         f.write(f'{pehe}\n')
 
-# Save MSE values to a txt file
+
 with open(os.path.join(results_folder_name, 'mse_values1.txt'), 'w') as f:
     for mse in mse_list:
         f.write(f'{mse}\n')
