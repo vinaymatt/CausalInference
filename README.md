@@ -1,4 +1,4 @@
-# Causal Inference Project
+# Causal Inference for Longitudinal Data
 This repository contains the code, data, and results of a Causal Inference project I completed as part of my coursework under Professor Vasant Honavar. The project extensively applies concepts of counterfactual neural networks (CFRNet) and Gaussian processes for estimating Average Treatment Effects (ATE) in longitudinal data.
 
 ## Overview
