@@ -13,7 +13,7 @@ In addition, the Wasserstein distance was computed to measure the distributional
 
 A complete simulation workflow is provided in the script, including data preparation, training, and evaluation stages. The performance of the model is evaluated on various metrics, including the Mean Squared Error (MSE), the Precision in Estimating Heterogeneous Effects (PEHE), and the error in estimated Average Treatment Effect (ATE).
 
-The DGP as disccused below can be found in the 'DGP.py' file in the directory.
+The DGP as disccused below can be found in the `DGP.py` file in the directory.
 
 ## Data Generating Process
 The data was generated following the process outlined below:
