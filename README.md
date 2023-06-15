@@ -7,9 +7,9 @@ In this project, a causal inference model was implemented to estimate the Averag
 ## Code Summary
 The CFRNet is represented by the `CFRModel` class, a PyTorch implementation of a Counterfactual Regression Model introduced by Shalit et al. This model takes in treatment and control data, learns shared representations, and generates treated and control outcomes.
 
-The core contribution of the code includes the implementation of a Gaussian process model (using the GPyTorch library) and the loss function for CFRNet. The loss function combines factual loss, balance term, Gaussian process regularisation, and a Wasserstein term, to handle the challenges posed by confounding variables, imbalanced treatment populations, and non-linearity and multi-dimensionality of treatment effects, respectively.
+The core contribution of the code includes the implementation of a Gaussian process model (using the GPyTorch library) and the loss function for CFRNet. The loss function combines factual loss, balance term, Gaussian process regularisation, and a Wasserstein term, to handle the challenges posed by longitudinal data, confoudning variables, multilevel correlations, imbalanced treatment populations, and non-linearity and multi-dimensionality of treatment effects, respectively.
 
-In addition, the Wasserstein distance was computed to measure the distributional distance between the predicted potential outcomes of treated and untreated groups, which plays a crucial role in regularizing the predicted treatment effects.
+In addition, the Wasserstein distance was used to measure the distributional distance between the predicted potential outcomes of treated and untreated groups, which plays a crucial role in regularizing the predicted treatment effects.
 
 A complete simulation workflow is provided in the script, including data preparation, training, and evaluation stages. The performance of the model is evaluated on various metrics, including the Mean Squared Error (MSE), the Precision in Estimating Heterogeneous Effects (PEHE), and the error in estimated Average Treatment Effect (ATE).
 
