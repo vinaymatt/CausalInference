@@ -24,7 +24,6 @@ def compute_wasserstein(treated_outcomes, untreated_outcomes):
 
     return torch.tensor(wasserstein_dist, requires_grad=True, dtype=torch.float32)
 
-# Create a folder to store the ATE and error results
 results_folder_name = 'ate_and_error_results'
 folder_name = 'simulation_results'
 if not os.path.exists(results_folder_name):
