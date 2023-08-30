@@ -9,10 +9,8 @@ from gpytorch.mlls import ExactMarginalLogLikelihood
 from sklearn.model_selection import KFold
 from tqdm import tqdm
 
-# Load data from Excel
 data = pd.read_excel('synthetic_data_with_infotreat.xlsx')
 
-# Split data by individual
 unique_individuals = data['Individual'].unique()
 train_individuals = unique_individuals[:int(0.8 * len(unique_individuals))]
 test_individuals = unique_individuals[int(0.8 * len(unique_individuals)):]
@@ -20,7 +18,6 @@ test_individuals = unique_individuals[int(0.8 * len(unique_individuals)):]
 train_data = data[data['Individual'].isin(train_individuals)]
 test_data = data[data['Individual'].isin(test_individuals)]
 
-# Extract features, treatment, outcome, and time
 X_train = train_data.drop(columns=['Individual', 'Time', 'T', 'Y', 'Y0', 'Y1']).values
 T_train = train_data['T'].values
 Y_train = train_data['Y'].values
@@ -31,7 +28,6 @@ T_test = test_data['T'].values
 Y_test = test_data['Y'].values
 time_test = test_data['Time'].values
 
-# Convert to PyTorch tensors
 X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
 T_train_tensor = torch.tensor(T_train, dtype=torch.float32)
 Y_train_tensor = torch.tensor(Y_train, dtype=torch.float32)
@@ -40,7 +36,6 @@ time_train_tensor = torch.tensor(time_train, dtype=torch.float32)
 train_data = TensorDataset(X_train_tensor, T_train_tensor, Y_train_tensor, time_train_tensor)
 train_loader = DataLoader(train_data, batch_size=32, shuffle=True)
 
-# Neural network architecture for CFR
 class CFRModel(nn.Module):
     def __init__(self, input_size, output_size):
         super(CFRModel, self).__init__()
@@ -57,8 +52,6 @@ class CFRModel(nn.Module):
         h = self.outcome_function(phi)
         return h
 
-
-# GP model (modified to accept different kernel functions)
 class TimeGPModel(gpytorch.models.ExactGP):
     def __init__(self, train_x, train_y, likelihood, kernel):
         super(TimeGPModel, self).__init__(train_x, train_y, likelihood)
@@ -70,73 +63,59 @@ class TimeGPModel(gpytorch.models.ExactGP):
         covar_x = self.covar_module(x)
         return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
 
-
-# Loss functions and regularizers
 def cfr_loss(y_pred, y_true, t, alpha, beta, gp_model, likelihood, output):
     treatment_pred = y_pred[t == 1]
     treatment_true = y_true[t == 1]
     control_pred = y_pred[t == 0]
     control_true = y_true[t == 0]
 
-    # Compute the balance regularization term
     treatment_pred_mean = torch.mean(treatment_pred)
     control_pred_mean = torch.mean(control_pred)
     balance_term = treatment_pred_mean - control_pred_mean
 
-    # Compute the factual loss
     factual_loss = torch.mean((treatment_true - treatment_pred) ** 2) + torch.mean((control_true - control_pred) ** 2)
 
-    # Compute the GP regularization term
     mll = ExactMarginalLogLikelihood(likelihood, gp_model)
     gp_reg_term = -mll(output, y_true)
-
-    # Compute the overall loss
+    
     loss = factual_loss + alpha * balance_term + beta * gp_reg_term
     return loss
 
 
 def train_and_evaluate(alpha, beta, kernel, X_train_fold_tensor, T_train_fold_tensor, Y_train_fold_tensor, time_train_fold_tensor):
-    # Initialize model
+
     input_size = X_train.shape[1]
     output_size = 1
     model = CFRModel(input_size, output_size)
 
-    # Initialize likelihood and GP model for time component
     likelihood = gpytorch.likelihoods.GaussianLikelihood()
     gp_model = TimeGPModel(time_train_fold_tensor.unsqueeze(-1), Y_train_fold_tensor, likelihood, kernel)
 
-    # Joint training for CFR and GP models
     optimizer = Adam(list(model.parameters()) + list(gp_model.parameters()), lr=0.001)
 
-    # Training loop
     epochs = 100
     for epoch in range(epochs):
         for x_batch, t_batch, y_batch, time_batch in train_loader:
             optimizer.zero_grad()
 
-            # Forward pass
             y_pred = model(x_batch, t_batch)
             gp_model.set_train_data(time_batch.unsqueeze(-1), y_batch, strict=False)  # Update GP model's training inputs
             gp_model.train()
             likelihood.train()
             output = gp_model(time_batch.unsqueeze(-1))
 
-            # Compute loss and backpropagate
             loss = cfr_loss(y_pred, y_batch, t_batch, alpha, beta, gp_model, likelihood, output)
             loss.backward()
             optimizer.step()
 
-    # Evaluate the model on the test set
     with torch.no_grad():
         model.eval()
         y_pred = model(torch.tensor(X_test, dtype=torch.float32), torch.tensor(T_test, dtype=torch.float32))
         mse = torch.mean((torch.tensor(Y_test, dtype=torch.float32) - y_pred) ** 2)
 
-    # Return the test error
     return mse.item()
 
 
-# Perform model selection and hyperparameter tuning using cross-validation
 kernels = [gpytorch.kernels.RBFKernel(), gpytorch.kernels.MaternKernel(nu=1.5), gpytorch.kernels.MaternKernel(nu=2.5)]
 alphas = [0.1, 1.0, 10.0]
 betas = [0.1, 1.0, 10.0]
@@ -158,7 +137,6 @@ for kernel in tqdm(kernels, desc="Kernels"):
                 Y_train_fold, Y_val_fold = Y_train[train_index], Y_train[val_index]
                 time_train_fold, time_val_fold = time_train[train_index], time_train[val_index]
 
-                # Convert to PyTorch tensors
                 X_train_fold_tensor = torch.tensor(X_train_fold, dtype=torch.float32)
                 T_train_fold_tensor = torch.tensor(T_train_fold, dtype=torch.float32)
                 Y_train_fold_tensor = torch.tensor(Y_train_fold, dtype=torch.float32)
